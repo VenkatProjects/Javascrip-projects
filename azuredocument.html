@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Welcome to Azure VM</title>
+</head>
+<body>
+    <nav id="navbar">
+      <header>Linux Virtual Machines in Azure</header>
+      <ul>
+        <li><a class="nav-link" href="#Introduction">Introduction</a></li>
+        <li><a class="nav-link" href="#What_you_should_already_know_before_creating_VM">What you should already know before creating VM</a></li>
+        <li><a class="nav-link" href="#Create_resource_group">Create Resource Group</a></li>
+        <li><a class="nav-link" href="#Create_a_virtual_network_and_subnet">Create a virtual network and subnet</a</li>
+        <li><a class="nav-link" href="#Create_a_public_IP_address">Create a public IP address</a></li>
+        <li><a class="nav-link" href="#Create_a_network_security_group">Create a network security group</a></li>
+        <li><a class="nav-link" href="#Create_a_virtual_NIC">Create a virtual NIC</a></li>
+        <li><a class="nav-link" href="#Create_an_availability_set">Create an availability set</a></li>
+        <li><a class="nav-link" href="#Create_a_VM">Create a VM</a></li>
+        <li><a class="nav-link" href="#Reference">Reference</a></li>
+      </ul>
+    </nav>
+    <main id="main-doc">
+      <section class="main-section" id="Introduction">
+        <header>Introduction</header>
+        <article>
+          <p>
+            Azure Virtual Machines (VM) is one of several types of on-demand, scalable computing resources that Azure offers. Typically, you choose a VM when you need more control over the computing environment than the other choices offer. This article gives you information about what you should consider before you create a VM, how you create it, and how you manage it.</p>
+          <p>An Azure VM gives you the flexibility of virtualization without having to buy and maintain the physical hardware that runs it. However, you still need to maintain the VM by performing tasks, such as configuring, patching, and installing the software that runs on it.</p>
+          <ul>
+            <li><strong>Development and test</strong> - Azure VMs offer a quick and easy way to create a computer with specific configurations required to code and test an application.</li>
+            <li>
+              <strong>Applications in the cloud</strong> - Because demand for your application can fluctuate, it might make economic sense to run it on a VM in Azure. You pay for extra VMs when you need them and shut them down when you don’t.</p>
+          <li><strong>Extended datacenter</strong> - Virtual machines in an Azure virtual network can easily be connected to your organization’s network.</li>
+          </ul>
+        </article>
+      </section>
+    <section class="main-section" id="What_you_should_already_know_before_creating_VM">
+      <header>What you should already know before creating VM</header>
+      <article>
+        <p>There are always a multitude of design considerations when you build out an application infrastructure in Azure. These aspects of a VM are important to think about before you start.</p>
+        <ul>
+          <li>
+            The names of your application resources</li>
+          <li>The location where the resources are stored</li>
+          <li>The size of the VM</li>
+          <li>The maximum number of VMs that can be created</li>
+          <li>The operating system that the VM runs</li>
+          <li>The configuration of the VM after it starts</li>
+          <li>The related resources that the VM needs</li>
+        </ul>
+        </articke>
+    </section>
+    <section class="main-section" id="Create_resource_group">
+      <header>Create resource group</header>
+      <article>
+        <p>Create a resource group with the az group create command.</p>
+        <p>
+          An Azure resource group is a logical container into which Azure resources are deployed and managed. A resource group must be created before a virtual machine. In this example, a resource group named <em>myResourceGroupVM</em> is created in the eastus region.</p>
+        <code>az group create --name myResourceGroupVM --location eastus</code>
+      </article>
+    </section>
+    <section class="main-section" id="Create_a_virtual_network_and_subnet">
+      <header>Create a virtual network and subnet</header>
+      <article>
+        Next you create a virtual network in Azure and a subnet in to which you can create your VMs. Use az network vnet create to create a virtual network named <em>myVnet</em> with the 192.168.0.0/16 address prefix. You also add a subnet named <em>mySubnet</em> with the address prefix of 192.168.1.0/24.</br>
+        <code>
+          az network vnet create \</br>
+      --resource-group myResourceGroup \</br>
+    --name myVnet \</br>
+    --address-prefix 192.168.0.0/16 \</br>
+    --subnet-name mySubnet \</br>
+    --subnet-prefix 192.168.1.0/24</br>
+        </code>
+      </article>
+    </section>
+    <section class="main-section" id="Create_a_public_IP_address">
+      <header>Create a public IP address</header>
+      <p>Now let's create a public IP address with az network public-ip create. This public IP address enables you to connect to your VMs from the Internet. Because the default address is dynamic, create a named DNS entry with the <em>--domain-name-label</em>parameter.</p>
+      <p> The following example creates a public IP named <em>myPublicIP</em> with the DNS name of </em>mypublicdns</em>. Because the DNS name must be unique, provide your own unique DNS name.</p>
+    <code>az network public-ip create \</br>
+    --resource-group myResourceGroup \</br>
+    --name myPublicIP \</br>
+    --dns-name mypublicdns</br>
+    </code>
+    </article>
+    </section>
+    <section class="main-section" id="Create_a_network_security_group">
+      <header>Create a network security group</header>
+      <article>
+        <p>To control the flow of traffic in and out of your VMs, you apply a network security group to a virtual NIC or subnet. The following example uses az network nsg create to create a network security group named <em>myNetworkSecurityGroup</em>.</p>
+        <code>
+          az network nsg create \</br>
+        --resource-group myResourceGroup \</br>
+      --name myNetworkSecurityGroup</br>
+        </code>
+    <p>
+      You define rules that allow or deny specific traffic. To allow inbound connections on port 22 (to enable SSH access), create an inbound rule with az network nsg rule create. The following example creates a rule named <em>myNetworkSecurityGroupRuleSSH</em>.</p>
+    <code>
+      az network nsg rule create \</br>
+    --resource-group myResourceGroup \</br>
+    --nsg-name myNetworkSecurityGroup \</br>
+    --name myNetworkSecurityGroupRuleSSH \</br>
+    --protocol tcp \</br>
+    --priority 1000 \</br>
+    --destination-port-range 22 \</br>
+    --access allow</br>
+    </code>
+    <p>To allow inbound connections on port 80 (for web traffic), add another network security group rule. The following example creates a rule named <em>myNetworkSecurityGroupRuleHTTP</em>.</p>
+    <code>
+      az network nsg rule create \</br>
+    --resource-group myResourceGroup \</br>
+    --nsg-name myNetworkSecurityGroup \</br>
+    --name myNetworkSecurityGroupRuleWeb \</br>
+    --protocol tcp \</br>
+    --priority 1001 \</br>
+    --destination-port-range 80 \</br>
+    --access allow</br>
+    </code>
+    Examine the network security group and rules with az network nsg show:
+    <code>
+      az network nsg show --resource-group myResourceGroup --name myNetworkSecurityGroup
+    </code>
+    </article>
+    </section>
+    <section class="main-section" id="Create_a_virtual_NIC">
+      <header>Create a virtual NIC</header>
+      <article>
+        <p>Virtual network interface cards (NICs) are programmatically available because you can apply rules to their use. Depending on the VM size, you can attach multiple virtual NICs to a VM. In the following az network nic create command, you create a NIC named <em>myNic</em> and associate it with your network security group. The public IP address <em>myPublicIP</em> is also associated with the virtual NIC.</p>
+        <code>
+          az network nic create \</br>
+        --resource-group myResourceGroup \</br>
+      --name myNic \</br>
+    --vnet-name myVnet \</br>
+    --subnet mySubnet \</br>
+    --public-ip-address myPublicIP \</br>
+    --network-security-group myNetworkSecurityGroup</br>
+        </code>
+      </article>
+    </section>
+    <section class="main-section" id="Create_an_availability_set">
+      <header>Create an availability set</header>
+      <article>
+        <p>Availability sets help spread your VMs across fault domains and update domains. Even though you only create one VM right now, it's best practice to use availability sets to make it easier to expand in the future.</p>
+        <p>Fault domains define a grouping of virtual machines that share a common power source and network switch. By default, the virtual machines that are configured within your availability set are separated across up to three fault domains. A hardware issue in one of these fault domains does not affect every VM that is running your app.</p>
+        <p>Update domains indicate groups of virtual machines and underlying physical hardware that can be rebooted at the same time. During planned maintenance, the order in which update domains are rebooted might not be sequential, but only one update domain is rebooted at a time.</p>
+    
+    <p>Azure automatically distributes VMs across the fault and update domains when placing them in an availability set. For more information, see managing the availability of VMs.</p>
+    
+    <p>Create an availability set for your VM with az vm availability-set create. The following example creates an availability set named <em>myAvailabilitySet</em>.</p>
+        <code>
+          az vm availability-set create \</br>
+          --resource-group myResourceGroup \</br>
+          --name myAvailabilitySet</br>
+        </code>  
+      </article>
+    </section>
+    <section class="main-section" id="Create_a_VM">
+      <header>Create a VM</header>
+      <article>
+        <p>You've created the network resources to support Internet-accessible VMs. Now create a VM and secure it with an SSH key. In this example, let's create an Ubuntu VM based on the most recent LTS. You can find additional images with az vm image list, as described in finding Azure VM images.<p>
+        <p>Specify an SSH key to use for authentication. If you do not have an SSH public key pair, you can create them or use the <em>--generate-ssh-keys</em> parameter to create them for you. If you already have a key pair, this parameter uses existing keys in <em>~/.ssh</em>.</p>
+        <p>Create the VM by bringing all the resources and information together with the az vm create command. The following example creates a VM named <em>myVM</em>.</p>
+        <code>
+          az vm create \<br>
+        --resource-group myResourceGroup \<br>
+        --name myVM \<br>
+          --location eastus \</br>
+        --availability-set myAvailabilitySet \</br>
+      --nics myNic \</br>
+    --image UbuntuLTS \</br>
+    --admin-username azureuser \</br>
+    --generate-ssh-keys</br>
+        </code>
+    SSH to your VM with the DNS entry you provided when you created the public IP address.
+      </article>
+    </section>
+    <section class="main-section" id="Reference">
+      <header>Reference</header>
+      <article>
+        <ul>
+          <li>All the documentation in this page is taken from
+            <a href="https://docs.microsoft.com/en-us/azure/virtual-machines/linux/create-cli-complete" target="-blank">Microsoft Azure</a>
+          </li>
+        </ul>
+      </article>
+    </section>
+    </main>
+    <footer>
+      &#169;	venkat 2020
+    </footer>
+</body>
+</html>
